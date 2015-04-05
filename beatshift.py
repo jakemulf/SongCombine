@@ -52,6 +52,9 @@ def tempo_shift(input_filename, seg_range, shift_length, second_song):
             ts = audio.AudioData(ndarray=scaled_beat, shape=scaled_beat.shape,
                     sampleRate=audiofile.sampleRate, numChannels=scaled_beat.shape[1])
             collect.append(ts)
+    
+    print "Waiting 9 seconds"
+    time.sleep(9)
 
     return collect
 

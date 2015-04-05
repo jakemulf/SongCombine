@@ -63,6 +63,9 @@ def get_transition(first_filename, second_filename, ratio):
                 first_low = i
                 second_low = j
 
+    print "Waiting 6 seconds"
+    time.sleep(6)
+
     return (first_low+first_start,second_low+second_start)
 
 #determines the weighted Euclidean distance between 2 segments

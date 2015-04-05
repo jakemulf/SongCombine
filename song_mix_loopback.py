@@ -30,11 +30,12 @@ from pyechonest import track
 from echonest.remix import audio
 import twosongshift
 import beatshift
-
+import time
 def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
     #Determine transitions
     transitions = generate_transitions(mp3_list, transition_ratio)
 
+    print transitions
 
     #generate the array of audio quantums
     first_index, _ = transitions[0]
@@ -51,6 +52,8 @@ def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
             start_trans, end_trans = loop_trans
 
             audiofile = audio.LocalAudioFile(mp3_list[i])
+            print "Waiting 3 seconds"
+            time.sleep(3)
 
             col_append = []
             for j in range(start_segment, end_trans):
@@ -94,6 +97,9 @@ def generate_loopback(trans_one, trans_two, mp3_list, index_in_list):
     t = track.track_from_filename(mp3_list[index_in_list])
     t.get_analysis()
 
+    print "Waiting 3 seconds"
+    time.sleep(3)
+    
     src_range = range(one_second, len(t.segments))
 
     best_trans = (0,one_second)
