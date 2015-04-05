@@ -15,6 +15,8 @@ a ratio of 0.5 will look at the middle 1/2 of the song, 25% on each side from th
 Created by Jacob Mulford on 04/04/2015
 
 Based on infinitejuke.com and simple stretch (cite this)
+
+Updated on 04/05/2015 to reoder the list of songs to make the transitions more ideal
 """
 
 usage = """
@@ -32,9 +34,10 @@ import twosongshift
 import beatshift
 import time
 def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
-    #Determine transitions
-    transitions = generate_transitions(mp3_list, transition_ratio)
+    #Reorders mp3_list and generates the transitions
+    transitions, mp3_list = generate_transitions(mp3_list, transition_ratio)
 
+    print mp3_list
     print transitions
 
     #generate the array of audio quantums
@@ -79,12 +82,31 @@ def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
     out.encode(output_file)
 
 #takes a list of mp3 files and a transition ratio, and returns an array of tuples
-#containing each ideal transition
+#containing each ideal transition.  updates the array mp3_list to be in order of
+#the ideal transitions between 2 songs
 def generate_transitions(mp3_list, transition_ratio):
     transitions = []
+    new_mp3_order = [0] #the first song the user specifies will always play first
     for i in range(0,len(mp3_list)-1):
-        transitions.append(twosongshift.get_transition(mp3_list[i],mp3_list[i+1],transition_ratio))
-    return transitions
+        best_trans = (-1,-1)
+        best_dist = float("inf")
+        best_index = -1
+        for j in range(0,len(mp3_list)):
+            if (not (j in new_mp3_order)) and (j != i):
+                (curr_trans_one, curr_trans_two, curr_dist) = twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio)
+                if (curr_dist < best_dist):
+                    best_trans = (curr_trans_one, curr_trans_two)
+                    best_dist = curr_dist
+                    best_index = j
+
+        new_mp3_order.append(best_index)
+        transitions.append(best_trans) 
+    new_mp3_list = [mp3_list[0]]
+    for i in range(1,len(new_mp3_order)):
+        new_mp3_list.append(mp3_list[new_mp3_order[i]])
+
+    print new_mp3_order
+    return transitions, new_mp3_list
 
 #determines the ideal transition within a song to fit
 #the loopback to make the transition between 2 songs possible

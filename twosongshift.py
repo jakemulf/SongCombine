@@ -12,6 +12,7 @@ This script was altered on 04/04/2015 to be called by another class, and returns
 import math
 import sys
 import pyechonest.track as track
+import time
 
 usage = """
 Usage: python twosongshift.py <first_filename> <second_filename> <ratio> <output_file>
@@ -66,7 +67,7 @@ def get_transition(first_filename, second_filename, ratio):
     print "Waiting 6 seconds"
     time.sleep(6)
 
-    return (first_low+first_start,second_low+second_start)
+    return (first_low+first_start,second_low+second_start,comparisons[first_low][second_low])
 
 #determines the weighted Euclidean distance between 2 segments
 def compare_segments(seg_one, seg_two):

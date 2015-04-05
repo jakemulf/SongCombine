@@ -12,6 +12,7 @@ Updated on 04/04/2015 to be a method called by another script
 import dirac
 from echonest.remix import audio
 from pyechonest import track
+import time
 
 usage = """
 Usage: python beatshift.py <input_filename> <start_beat> <shift_length> <shift_magnitude> <output_filename>
