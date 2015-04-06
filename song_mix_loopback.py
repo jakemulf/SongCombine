@@ -51,18 +51,9 @@ def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
 
         if (start_segment >= end_segment): #if loopback needed
             loop_trans = generate_loopback(transitions[i-1],transitions[i],mp3_list,i)
-
             start_trans, end_trans = loop_trans
 
-            audiofile = audio.LocalAudioFile(mp3_list[i])
-            print "Waiting 3 seconds"
-            time.sleep(3)
-
-            col_append = []
-            for j in range(start_segment, end_trans):
-                col_append.append(audiofile.analysis.segments[j].render())
-
-            collects.append(col_append)
+            collects.append(song_loopback(start_segment, end_trans, mp3_list[i]))
 
             start_segment = start_trans
 
@@ -78,8 +69,24 @@ def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file):
     collects.append(col_append)
 
     #write to file
+    #the sum(collects, []) takes the list of lists of quantum and converts it
+    #to a single list of quantums
     out = audio.assemble(sum(collects, []), numChannels=2)
     out.encode(output_file)
+
+#generates the array of quantum for a song before its
+#loopback is needed
+def song_loopback(start_segment, end_trans, song_name):
+    audiofile = audio.LocalAudioFile(song_name)
+    print "Waiting 3 seconds"
+    time.sleep(3)
+
+    col_append = []
+    for i in range(start_segment, end_trans):
+        col_append.append(audiofile.analysis.segments[i].render())
+
+    return col_append
+
 
 #takes a list of mp3 files and a transition ratio, and returns an array of tuples
 #containing each ideal transition.  updates the array mp3_list to be in order of
