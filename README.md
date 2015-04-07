@@ -16,12 +16,15 @@ example: python song_mix_loopback.py house_of_gold.mp3 pompeii.mp3 little_talks.
 
 song_mix_loopback.py begins by determining the best transition from song to song.  This is done by comparing all the segments in a song to all the segments in all of the other songs that are not already positioned.  The transition with the lowest distance is deemed the best fit, and that song will be next in the list.  The order in which the user inputs the songs is irrelevant, except the final ordering keeps the first song in the list in its original position.
 
-Once the song list has been reordered, each audio quantum from each song is added into an array.  This array will be used to create the mp3 file.  For each song, the quantums are added that fall within the range of that song's transition.  When the quantums are approaching the transition peroid, they will begin to slowly change their tempo to match the tempo of the song it transitions to.
+Once the song list has been reordered, each audio quantum, that fits the transition range, from each song is added into an array.  This array will be used to create the mp3 file.  For each song, the quantums are added that fall within the range of that song's transition.  When the quantums are approaching the transition peroid, they will begin to slowly change their tempo to match the tempo of the song it transitions to.
 
 If a loopback is needed, all the quantum up to the loopback will be added to the array, and then the quantum following the loopback will continue as normal.
 
 After each song has its quantum added to the array, the array is compressed from a 2d array into a 1d array, and the file is written.
 
+song_mix_loopback.py has the option for the user to toggle on or off a delay.  Due to echonest limiting a user to 20 calls per minute, this delay is necessary if working with moderately large lists (>5).
+
+In addition, tempo comparison can also be toggled on or off.  Tempo is not necessary for comparison due to the tempo shifting aspect, but if a user wants to limit the change in tempo this can be done.
 #song_mix_stepback.py
 
 ###Process
