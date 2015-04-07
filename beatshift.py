@@ -22,7 +22,7 @@ Example: python beatshift.py CallMeMaybe.mp3 10 50 -10 CallMeShift.mp3
 This will shift the tempo of CallMeMaybe.mp3 by -10 bpm over 50 beats starting at beat 10.
 """
 
-def tempo_shift(input_filename, seg_range, shift_length, second_song):
+def tempo_shift(input_filename, seg_range, shift_length, second_song, delay):
     t1 = track.track_from_filename(input_filename)
     t2 = track.track_from_filename(second_song)
 
@@ -53,9 +53,9 @@ def tempo_shift(input_filename, seg_range, shift_length, second_song):
             ts = audio.AudioData(ndarray=scaled_beat, shape=scaled_beat.shape,
                     sampleRate=audiofile.sampleRate, numChannels=scaled_beat.shape[1])
             collect.append(ts)
-    
-    print "Waiting 9 seconds"
-    time.sleep(9)
+    if delay:
+        print "Waiting 9 seconds"
+        time.sleep(9)
 
     return collect
 

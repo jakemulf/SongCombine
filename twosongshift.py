@@ -26,7 +26,7 @@ segment in ShakeItOff.mp3.
 """
 
 #replaced main
-def get_transition(first_filename, second_filename, ratio):
+def get_transition(first_filename, second_filename, ratio, delay, compare_tempo):
     #set up the 2 files for analysis
     track_one = track.track_from_filename(first_filename)
     track_one.get_analysis()
@@ -52,7 +52,7 @@ def get_transition(first_filename, second_filename, ratio):
     for i in range(first_start,first_end):
         appender = []
         for j in range(second_start,second_end):
-            compare = compare_segments(track_one.segments[i],track_two.segments[j])
+            compare = compare_segments(track_one.segments[i],track_two.segments[j], compare_tempo)
             appender.append(compare)
         comparisons.append(appender)
 
@@ -63,18 +63,23 @@ def get_transition(first_filename, second_filename, ratio):
             if comparisons[i][j] < comparisons[first_low][second_low]:
                 first_low = i
                 second_low = j
-
-    print "Waiting 6 seconds"
-    time.sleep(6)
+    if delay:
+        print "Waiting 6 seconds"
+        time.sleep(6)
 
     return (first_low+first_start,second_low+second_start,comparisons[first_low][second_low])
 
 #determines the weighted Euclidean distance between 2 segments
-def compare_segments(seg_one, seg_two):
+def compare_segments(seg_one, seg_two, compare_tempo):
     timbre_distance = euc_dist(seg_one['timbre'],seg_two['timbre'])
     pitch_distance = euc_dist(seg_one['pitches'],seg_two['pitches'])
     loud_distance = (seg_one['loudness_start'] - seg_two['loudness_start'])**2
-    return timbre_distance + 10*pitch_distance + loud_distance
+    tempo_distance = 0
+
+    if compare_tempo:
+        tempo_distance = (seg_one['duration'] - seg_two['duration'])**2
+
+    return timbre_distance + 10*pitch_distance + loud_distance + 12*tempo_distance
 
 #calculates euclidean distance
 def euc_dist(arr_one,arr_two):
