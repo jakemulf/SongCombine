@@ -4,7 +4,7 @@ The script song_mix_loopback.py takes a list of songs, reorders them so each son
 
 There will be 2 implementations for determining the order of songs.  The first one will use an implementations of Prim's algorithm.  The first song in the list will be used as the seed, and the next song to be played will be the one with the most similar transition.  This pattern will continue until all the songs in the list are part of the path.
 
-The second implementation for determining the order of songs will use an implementation of Kruskal's algorithm.  The transitions to take will be put in sorted order, with the best transition appearing first.  Each transition in the array will be added to the order until a cycle is made where each song is played once.  The final mp3 file will begin with the first song in the first transition.
+The second implementation for determining the order of songs will use an implementation of Kruskal's algorithm.  The transitions to take will be put in sorted order, with the best transition appearing first.  Each transition in the array will be added to the playlist until a cycle is made where each song is played once.  If a transition is taken that makes a cycle without including all of the songs, it is thrown out.  The final mp3 file will begin with the first song in the first transition.
 
 #Inspiration
 
@@ -12,9 +12,9 @@ This is the final project for my class Music Informatics.  The final project wil
 
 #song_mix_loopback.py
 
-usage: python song_mix_loopback.py [mp3 list] transition_ratio segment_tempo_change output_file delay[t/f] compare_tempo[t/f]
+usage: python song_mix_loopback.py [mp3 list] transition_ratio segment_tempo_change output_file delay[t/f] compare_tempo[t/f] algorithm[p/k]
 
-example: python song_mix_loopback.py house_of_gold.mp3 pompeii.mp3 little_talks.mp3 0.5 20 out.mp3 t t
+example: python song_mix_loopback.py house_of_gold.mp3 pompeii.mp3 little_talks.mp3 0.5 20 out.mp3 t t p
 ###Process
 
 song_mix_loopback.py begins by determining the best transition from song to song.  This is done by comparing all the segments in a song to all the segments in all of the other songs.  The ordering will be based on either Prim's or Kruska'ls algorithm, depending on the user's choice.
