@@ -127,28 +127,6 @@ def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
 
 #kruskal's algorithm for the song transition
 #not yet implemented, currently defaults to prims algorithm
-    transitions = []
-    new_mp3_order = [0] #the first song the user specifies will always play first
-    for i in range(0,len(mp3_list)-1):
-        best_trans = (-1,-1)
-        best_dist = float("inf")
-        best_index = -1
-        for j in range(0,len(mp3_list)):
-            if (not (j in new_mp3_order)) and (j != i):
-                (curr_trans_one, curr_trans_two, curr_dist) = twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio,delay,compare_tempo)
-                if (curr_dist < best_dist):
-                    best_trans = (curr_trans_one, curr_trans_two)
-                    best_dist = curr_dist
-                    best_index = j
-
-        new_mp3_order.append(best_index)
-        transitions.append(best_trans) 
-    new_mp3_list = [mp3_list[0]]
-    for i in range(1,len(new_mp3_order)):
-        new_mp3_list.append(mp3_list[new_mp3_order[i]])
-
-    print new_mp3_order
-    return transitions, new_mp3_list
 def kruskals_algorithm(mp3_list, transition_ratio, delay, compare_tempo):
     return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo)
 
