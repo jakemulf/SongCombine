@@ -20,11 +20,11 @@ Updated on 04/05/2015 to reoder the list of songs to make the transitions more i
 """
 
 usage = """
-Usage: song_mix_loopback.py [list of mp3 files] transition_ratio segment_tempo_change_limit output_file delay[t/f] compare_tempo[t/f]
+Usage: song_mix_loopback.py [list of mp3 files] transition_ratio segment_tempo_change_limit output_file delay[t/f] compare_tempo[t/f] algorithm[p/k]
 
-Example: song_mix_loopback.py YouCanCallMeAl.mp3 CallMeMaybe.mp3 Celebration.mp3 Beethoven5th.mp3 .5 20 mashup.mp3 t f
+Example: song_mix_loopback.py YouCanCallMeAl.mp3 CallMeMaybe.mp3 Celebration.mp3 Beethoven5th.mp3 .5 20 mashup.mp3 t f p
 
-This will take the 4 mp3 files, combine them all together at the ideal transitions, and put this
+This will take the 4 mp3 files, combine them all together using Prim's algorithm at the ideal transitions, and put this
 combination into mashup.mp3.  Each song will have up to 20 segments to change tempo, and the middle
 50% of each song will be looked at.  The program will delay slightly after each echonest call, and
 tempo will not be used in the comparison
@@ -34,9 +34,9 @@ from echonest.remix import audio
 import twosongshift
 import beatshift
 import time
-def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file, delay, compare_tempo):
+def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file, delay, compare_tempo, algorithm):
     #Reorders mp3_list and generates the transitions
-    transitions, mp3_list = generate_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+    transitions, mp3_list = generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm)
 
     print mp3_list
     print transitions
@@ -93,8 +93,15 @@ def song_loopback(start_segment, end_trans, song_name, delay):
 
 #takes a list of mp3 files and a transition ratio, and returns an array of tuples
 #containing each ideal transition.  updates the array mp3_list to be in order of
-#the ideal transitions between 2 songs
-def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+#the ideal transitions between 2 songs.  uses 2 different algorithms for the transitions
+def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm):
+    if (algorithm == "p"):
+        return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+    else:
+        return kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+
+#prim's algorithm for the song transition
+def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
     transitions = []
     new_mp3_order = [0] #the first song the user specifies will always play first
     for i in range(0,len(mp3_list)-1):
@@ -117,6 +124,33 @@ def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo):
 
     print new_mp3_order
     return transitions, new_mp3_list
+
+#kruskal's algorithm for the song transition
+#not yet implemented, currently defaults to prims algorithm
+    transitions = []
+    new_mp3_order = [0] #the first song the user specifies will always play first
+    for i in range(0,len(mp3_list)-1):
+        best_trans = (-1,-1)
+        best_dist = float("inf")
+        best_index = -1
+        for j in range(0,len(mp3_list)):
+            if (not (j in new_mp3_order)) and (j != i):
+                (curr_trans_one, curr_trans_two, curr_dist) = twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio,delay,compare_tempo)
+                if (curr_dist < best_dist):
+                    best_trans = (curr_trans_one, curr_trans_two)
+                    best_dist = curr_dist
+                    best_index = j
+
+        new_mp3_order.append(best_index)
+        transitions.append(best_trans) 
+    new_mp3_list = [mp3_list[0]]
+    for i in range(1,len(new_mp3_order)):
+        new_mp3_list.append(mp3_list[new_mp3_order[i]])
+
+    print new_mp3_order
+    return transitions, new_mp3_list
+def kruskals_algorithm(mp3_list, transition_ratio, delay, compare_tempo):
+    return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo)
 
 #determines the ideal transition within a song to fit
 #the loopback to make the transition between 2 songs possible
@@ -151,28 +185,29 @@ def generate_loopback(trans_one, trans_two, mp3_list, index_in_list, delay, comp
 if __name__=='__main__':
     import sys
     mp3_list = []
-    for i in range(1,len(sys.argv)-5):
+    for i in range(1,len(sys.argv)-6):
         try:
             mp3_list.append(sys.argv[i])
         except:
             print usage
             sys.exit(-1)
     try:
-        transition_ratio = float(sys.argv[len(sys.argv)-5])
-        change_limit = float(sys.argv[len(sys.argv)-4])
-        outfile_name = sys.argv[len(sys.argv)-3]
-        delay = (sys.argv[len(sys.argv)-2])
-        compare_tempo = (sys.argv[len(sys.argv)-1])
+        transition_ratio = float(sys.argv[len(sys.argv)-6])
+        change_limit = float(sys.argv[len(sys.argv)-5])
+        outfile_name = sys.argv[len(sys.argv)-4]
+        delay = (sys.argv[len(sys.argv)-3])
+        compare_tempo = (sys.argv[len(sys.argv)-2])
+        algorithm = (sys.argv[len(sys.argv)-1])
     except:
         print usage
         sys.exit(-1)
 
 
-    if (not (delay in ["t","f"])) and (not (compare_tempo in ["t","f"])):
+    if (not (delay in ["t","f"])) and (not (compare_tempo in ["t","f"])) and (not (algorithm in ["p","k"])):
         print usage
         sys.exit(-1)
 
     delay_bool = delay == "t"
     compare_tempo_bool = compare_tempo == "t"
 
-    main(mp3_list,transition_ratio,change_limit,outfile_name, delay_bool, compare_tempo_bool)
+    main(mp3_list,transition_ratio,change_limit,outfile_name, delay_bool, compare_tempo_bool, algorithm)
