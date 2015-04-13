@@ -14,7 +14,7 @@ a ratio of 0.5 will look at the middle 1/2 of the song, 25% on each side from th
 
 Created by Jacob Mulford on 04/04/2015
 
-Based on infinitejuke.com and simple stretch (cite this)
+Based on infinitejuke.com and https://github.com/echonest/remix/blob/master/examples/stretch/simple_stretch.py
 
 Updated on 04/05/2015 to reoder the list of songs to make the transitions more ideal
 """
