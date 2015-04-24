@@ -1,3 +1,5 @@
+#TODO: reorder_map()
+
 """
 song_mix_loopback.py
 
@@ -122,14 +124,197 @@ def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
     for i in range(1,len(new_mp3_order)):
         new_mp3_list.append(mp3_list[new_mp3_order[i]])
 
-    print new_mp3_order
     return transitions, new_mp3_list
 
 #kruskal's algorithm for the song transition
-#not yet implemented, currently defaults to prims algorithm
-def kruskals_algorithm(mp3_list, transition_ratio, delay, compare_tempo):
-    return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+    all_transitions = []
 
+    #generate all the transitions, store in all_transitions
+    #the array will hold 2 tuples with a total of 5 values, so that the
+    #tuple x will be (song_1, song_2, (segment_1, segment_2, distance))
+    for i in range(0,len(mp3_list)-1):
+        for j in range(i+1,len(mp3_list)):
+            all_transitions.append((i,j,(twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio,delay,compare_tempo))))
+
+    #sort all_transitions based on the distance
+    all_transitions = sort_by_distance(all_transitions)
+
+    #for each transition, add it to the list if and only if
+    #it doesn't make a cycle without all the nodes
+    map_order = []
+
+
+    for curr_trans in all_transitions:
+        (song_1, song_2, (_,_,_)) = curr_trans
+        if not makes_incomplete_cycle(map_order, (song_1, song_2), len(mp3_list)):
+            map_order.append(curr_trans)
+        if len(map_order) == len(mp3_list): #if the map is completed
+            break
+
+    #drop the last added transition
+    #the songs in this transition become the
+    #start and end songs of the final list
+    last_trans = map_order.pop()
+
+    print map_order
+    #reorder map_order so the transitions
+    #come in the order to be played
+    (first_song,last_song,(_,_,_)) = last_trans
+    map_order = reorder_map(map_order, first_song, last_song)
+    print map_order
+    #populate new_mp3_order and transitions so
+    #these can be used in main.  the mp3 order is
+    #seeded with the first song in last_trans
+    new_mp3_order = [first_song]
+    transitions = []
+
+    for connection in map_order:
+        (_,song,segs) = connection
+        (seg_1,seg_2,_) = segs
+        new_mp3_order.append(song)
+        transitions.append((seg_1,seg_2))
+
+    new_mp3_list = [mp3_list[new_mp3_order[0]]]
+    for i in range(1,len(new_mp3_order)):
+        new_mp3_list.append(mp3_list[new_mp3_order[i]])
+
+    return transitions, new_mp3_list
+
+#reorders the map so the transitions are made in order
+#the final map needs to be structured so transition (a,b)
+#goes from song a to song b
+def reorder_map(map_order, first_song, last_song):
+    new_order = []
+    prev_song = first_song
+
+    for i in range(0,len(map_order)):
+        for map_value in map_order:
+            if map_value not in new_order:
+
+                (song_1, song_2, _) = map_value
+                if (song_1 == prev_song or song_2 == prev_song):
+                    if song_2 == prev_song:
+                        prev_song = song_1
+                        map_value = flip_values(map_value)
+                    else:
+                        prev_song = song_2
+                    new_order.append(map_value)
+                    if prev_song == last_song:
+                        return new_order
+                
+    return new_order 
+
+#flips the values in the tuple if the songs
+#aren't in the desired order
+def flip_values(map_value):
+    (song_1, song_2, (seg_1, seg_2, distance)) = map_value
+    return (song_2, song_1, (seg_2, seg_1, distance))
+
+#determines if the transition will make an incomplete cycle
+#uses the current map, the transition to add, and how many
+#nodes should be in the full map
+def makes_incomplete_cycle(map, transition, node_count):
+    all_trans = []
+    
+    for map_index in map:
+        (song_1, song_2, _) = map_index
+        all_trans.append((song_1,song_2))
+
+    (song_1, song_2) = transition
+
+    #1st step: make sure no node is visited more than 2 times
+    visited_node_count = [0] * node_count
+    visited_node_count[song_1] = 1
+    visited_node_count[song_2] = 1
+    
+    for trans in all_trans:
+        (song_1, song_2) = trans
+        visited_node_count[song_1] = visited_node_count[song_1] + 1
+        visited_node_count[song_2] = visited_node_count[song_2] + 1
+
+    for count in visited_node_count:
+        if count > 2:
+            return True
+
+    #2nd step: make sure the added connection doesn't make an
+    #incompleted cycle
+    
+    visited_node_count = [0] * node_count
+    (first_song, _) = transition
+    (prev_song, curr_song) = transition
+
+    visited_node_count[prev_song] = 1
+    while True:
+        next_song = next_transition(all_trans, prev_song, curr_song)
+        
+        if next_song == -1: #the path has reached a dead end
+            return False #can't make an incomplete cycle if the path ends
+
+        prev_song = curr_song
+        curr_song = next_song
+
+        visited_node_count[prev_song] = visited_node_count[prev_song] + 1
+
+        if curr_song == first_song: #possibly reaching the full cycle
+            if 0 not in visited_node_count: #all the nodes need to be visited
+                return False #the cycle is completed
+            else:
+                return True #went back to start before visiting all nodes
+
+        if visited_node_count[curr_song] > 0:
+            return True #found a node that has been seen before, incompleted cycle
+
+#determines the next transition in the map with the given
+#previous and current songs
+def next_transition(map, prev_song, curr_song):
+    for i in range(0,len(map)):
+        (song_1, song_2) = map[i]
+
+        if curr_song in [song_1,song_2] and prev_song not in [song_1,song_2]:
+            if curr_song == song_1:
+                return song_2
+            else:
+                return song_1
+    return -1 #no song found
+    
+#sorting function to sort the transitions by distance
+#uses merge sort
+def sort_by_distance(transitions):
+    if transitions == [] or len(transitions) == 1:
+        return transitions
+    
+    mid = len(transitions)/2
+    first_half = sort_by_distance(transitions[0:mid])
+    second_half = sort_by_distance(transitions[mid:len(transitions)])
+
+    return merge_by_distance(first_half,second_half)
+    
+#helper function for sort_by_distance
+def merge_by_distance(first_half, second_half):
+    new_array = []
+
+    i = 0
+    j = 0
+
+    while (i < len(first_half)) and (j < len(second_half)):
+        (_,_,(_,_,first_distance)) = first_half[i]
+        (_,_,(_,_,second_distance)) = second_half[j]
+
+        if (first_distance < second_distance):
+            new_array.append(first_half[i])
+            i = i + 1
+        else:
+            new_array.append(second_half[j])
+            j = j + 1
+    while (i < len(first_half)):
+        new_array.append(first_half[i])
+        i = i + 1
+    while (j < len(second_half)):
+        new_array.append(second_half[j])
+        j = j + 1
+
+    return new_array
 #determines the ideal transition within a song to fit
 #the loopback to make the transition between 2 songs possible
 def generate_loopback(trans_one, trans_two, mp3_list, index_in_list, delay, compare_tempo):
