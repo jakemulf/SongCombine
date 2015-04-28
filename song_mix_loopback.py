@@ -1,4 +1,3 @@
-#TODO: reorder_map()
 
 """
 song_mix_loopback.py
