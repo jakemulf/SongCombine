@@ -104,6 +104,7 @@ def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algor
 
 #prim's algorithm for the song transition
 def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+    weight = 0.0
     transitions = []
     new_mp3_order = [0] #the first song the user specifies will always play first
     for i in range(0,len(mp3_list)-1):
@@ -119,15 +120,21 @@ def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
                     best_index = j
 
         new_mp3_order.append(best_index)
-        transitions.append(best_trans) 
+        weight = weight + curr_dist
+        transitions.append(best_trans)
+
     new_mp3_list = [mp3_list[0]]
     for i in range(1,len(new_mp3_order)):
         new_mp3_list.append(mp3_list[new_mp3_order[i]])
+
+    print weight
 
     return transitions, new_mp3_list
 
 #kruskal's algorithm for the song transition
 def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+    weight = 0.0
+
     all_transitions = []
 
     #generate all the transitions, store in all_transitions
@@ -157,12 +164,10 @@ def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
     #start and end songs of the final list
     last_trans = map_order.pop()
 
-    print map_order
     #reorder map_order so the transitions
     #come in the order to be played
     (first_song,last_song,(_,_,_)) = last_trans
     map_order = reorder_map(map_order, first_song, last_song)
-    print map_order
     #populate new_mp3_order and transitions so
     #these can be used in main.  the mp3 order is
     #seeded with the first song in last_trans
@@ -171,13 +176,16 @@ def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
 
     for connection in map_order:
         (_,song,segs) = connection
-        (seg_1,seg_2,_) = segs
+        (seg_1,seg_2,seg_weight) = segs
+        weight = weight + seg_weight
         new_mp3_order.append(song)
         transitions.append((seg_1,seg_2))
 
     new_mp3_list = [mp3_list[new_mp3_order[0]]]
     for i in range(1,len(new_mp3_order)):
         new_mp3_list.append(mp3_list[new_mp3_order[i]])
+
+    print weight
 
     return transitions, new_mp3_list
 
