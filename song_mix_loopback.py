@@ -36,8 +36,16 @@ import twosongshift
 import beatshift
 import time
 def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file, delay, compare_tempo, algorithm):
+    track_analysis = []
+    for i in range(0,len(mp3_list)):
+        track_analysis.append( (track.track_from_filename(mp3_list[i])))
+
+    for t in track_analysis:
+        t.get_analysis()
+
+    print "continuing..."
     #Reorders mp3_list and generates the transitions
-    transitions, mp3_list = generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm)
+    transitions, mp3_list = generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm, track_analysis)
 
     print mp3_list
     print transitions
@@ -58,7 +66,9 @@ def main(mp3_list, transition_ratio, segment_temp_change_limit, output_file, del
             collects.append(song_loopback(start_segment, end_trans, mp3_list[i],delay))
 
             start_segment = start_trans
-
+        print mp3_list[i]
+        print mp3_list[i+1]
+        print (start_segment, end_segment)
         collects.append(beatshift.tempo_shift(mp3_list[i],(start_segment,end_segment),segment_temp_change_limit,mp3_list[i+1],delay))
 
     _, last_index = transitions[len(transitions)-1]
@@ -95,30 +105,33 @@ def song_loopback(start_segment, end_trans, song_name, delay):
 #takes a list of mp3 files and a transition ratio, and returns an array of tuples
 #containing each ideal transition.  updates the array mp3_list to be in order of
 #the ideal transitions between 2 songs.  uses 2 different algorithms for the transitions
-def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm):
+def generate_transitions(mp3_list, transition_ratio, delay, compare_tempo, algorithm, track_analysis):
     if (algorithm == "p"):
-        return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+        return prims_transitions(mp3_list, transition_ratio, delay, compare_tempo, track_analysis)
     else:
-        return kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo)
+        return kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo, track_analysis)
 
 #prim's algorithm for the song transition
-def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo, track_analysis):
     weight = 0.0
     transitions = []
-    new_mp3_order = [0] #the first song the user specifies will always play first
-    for i in range(0,len(mp3_list)-1):
+    new_mp3_order = [0]
+    while (len(new_mp3_order) != len(mp3_list)):
+        curr_song = new_mp3_order[len(new_mp3_order)-1]
+
         best_trans = (-1,-1)
         best_dist = float("inf")
-        best_index = -1
-        for j in range(0,len(mp3_list)):
-            if (not (j in new_mp3_order)) and (j != i):
-                (curr_trans_one, curr_trans_two, curr_dist) = twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio,delay,compare_tempo)
+        next_song = -1
+
+        for i in range(0,len(mp3_list)):
+            if not (i in new_mp3_order):
+                (curr_trans_one, curr_trans_two, curr_dist) = twosongshift.get_transition(curr_song,i,transition_ratio,delay,compare_tempo, track_analysis)
                 if (curr_dist < best_dist):
                     best_trans = (curr_trans_one, curr_trans_two)
                     best_dist = curr_dist
-                    best_index = j
+                    next_song = i
 
-        new_mp3_order.append(best_index)
+        new_mp3_order.append(next_song)
         weight = weight + curr_dist
         transitions.append(best_trans)
 
@@ -131,7 +144,7 @@ def prims_transitions(mp3_list, transition_ratio, delay, compare_tempo):
     return transitions, new_mp3_list
 
 #kruskal's algorithm for the song transition
-def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
+def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo, track_analysis):
     weight = 0.0
 
     all_transitions = []
@@ -141,7 +154,7 @@ def kruskals_transitions(mp3_list, transition_ratio, delay, compare_tempo):
     #tuple x will be (song_1, song_2, (segment_1, segment_2, distance))
     for i in range(0,len(mp3_list)-1):
         for j in range(i+1,len(mp3_list)):
-            all_transitions.append((i,j,(twosongshift.get_transition(mp3_list[i],mp3_list[j],transition_ratio,delay,compare_tempo))))
+            all_transitions.append((i,j,(twosongshift.get_transition(i,j,transition_ratio,delay,compare_tempo,track_analysis))))
 
     #sort all_transitions based on the distance
     all_transitions = sort_by_distance(all_transitions)
